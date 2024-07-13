@@ -3,6 +3,7 @@ Got tired of always having to change url / chat formats for various LLM provider
 
 ## Sample Usage:
 
+```python
 from llm_config import get_llm, APIKeyManager
 import os
 from dotenv import load_dotenv
@@ -25,6 +26,7 @@ print("Gemini:", gemini_llm.get_response("What is the capital of Spain?"))
 # SDXL
 sdxl_llm = get_llm("sdxl", "stabilityai/stable-diffusion-xl-base-1.0")
 print("SDXL:", sdxl_llm.get_response("A futuristic cityscape of Tokyo"))
+```
 
 ## Adding Additional Providers and Response Formats:
 Add provider in LLMFactory llm_classes:
