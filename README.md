@@ -1,5 +1,6 @@
 # llm_factory
 Got tired of always having to change url / chat formats for various LLM providers (OpenAI, HuggingFace, Ollama), so created classes to more easily use them in my apps.
+APIKeyManager uses load_dotenv() so you need to have python-dotenv installed and an .env file created with your api_keys
 
 ## Sample Usage:
 
