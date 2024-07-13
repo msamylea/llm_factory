@@ -4,48 +4,7 @@ from openai import OpenAI
 import google.generativeai as genai
 from huggingface_hub import InferenceClient
 from PIL import Image
-
-class APIKeyManager:
-    """
-    A class for managing API keys.
-
-    This class provides methods to set and get API keys for different providers.
-    """
-
-    _instance = None
-    _api_keys: Dict[str, str] = {}
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(APIKeyManager, cls).__new__(cls)
-        return cls._instance
-
-    @classmethod
-    def set_api_key(cls, provider: str, api_key: str):
-        """
-        Set the API key for a provider.
-
-        Args:
-            provider (str): The provider name.
-            api_key (str): The API key.
-
-        Returns:
-            None
-        """
-        cls._api_keys[provider.lower()] = api_key
-
-    @classmethod
-    def get_api_key(cls, provider: str) -> Optional[str]:
-        """
-        Get the API key for a provider.
-
-        Args:
-            provider (str): The provider name.
-
-        Returns:
-            Optional[str]: The API key if found, None otherwise.
-        """
-        return cls._api_keys.get(provider.lower())
+import os
 
 class LLMConfig:
     """
@@ -54,30 +13,59 @@ class LLMConfig:
     Args:
         provider (str): The provider of the language model.
         model (str): The specific language model to use.
-        api_key (Optional[str]): The API key to authenticate the requests. If not provided, it will be retrieved from the APIKeyManager.
+        api_key (Optional[str]): The API key to authenticate the requests. If not provided, it will be retrieved from environment variables.
         base_url (Optional[str]): The base URL for the API endpoint.
         **kwargs: Additional parameters that can be passed to the language model.
 
     Attributes:
         provider (str): The provider of the language model.
         model (str): The specific language model to use.
-        api_key (str): The API key to authenticate the requests.
+        api_key (Optional[str]): The API key to authenticate the requests.
         base_url (str): The base URL for the API endpoint.
         params (dict): Additional parameters that can be passed to the language model.
 
     Raises:
-        ValueError: If the API key for the provider is not set.
-
+        ValueError: If the API key for the provider is not set (except for Ollama).
     """
 
     def __init__(self, provider: str, model: str, api_key: Optional[str] = None, base_url: Optional[str] = None, **kwargs):
         self.provider = provider.lower()
         self.model = model
-        self.api_key = api_key or APIKeyManager().get_api_key(self.provider)
-        if not self.api_key:
-            raise ValueError(f"API key for {self.provider} is not set. Use APIKeyManager.set_api_key() to set it.")
-        self.base_url = base_url
+        self.api_key = api_key or self._get_api_key()
+        if not self.api_key and self.provider != "ollama":
+            raise ValueError(f"API key for {self.provider} is not set. Please set the appropriate environment variable.")
+        self.base_url = base_url or self._get_base_url()
         self.params = kwargs
+
+    def _get_api_key(self) -> Optional[str]:
+        """
+        Retrieves the API key from environment variables based on the provider.
+
+        Returns:
+            Optional[str]: The API key if found, None otherwise.
+        """
+        env_var_map = {
+            "openai": "OPENAI_API_KEY",
+            "huggingface": "HF_TOKEN",
+            "huggingface-openai": "HF_TOKEN",
+            "huggingface-text": "HF_TOKEN",
+            "gemini": "GENAI_API_KEY",
+            "sdxl": "HF_TOKEN",
+        }
+        env_var = env_var_map.get(self.provider)
+        return os.environ.get(env_var) if env_var else None
+
+    def _get_base_url(self) -> Optional[str]:
+        """
+        Retrieves the base URL for the provider, if applicable.
+
+        Returns:
+            Optional[str]: The base URL if available, None otherwise.
+        """
+        if self.provider == "ollama":
+            return "http://localhost:11434/v1"
+        return None
+
 
 class BaseLLM(ABC):
     """
@@ -240,9 +228,9 @@ class SDXLLLM(BaseLLM):
         except Exception as e:
             return f"Error generating image: {str(e)}"
 
-class HFLLM(BaseLLM):
+class HFOpenAIAPILLM(BaseLLM):
     """
-    Hugging Face Language Model (HFLLM) class.
+    Hugging Face Language Model (HFLLM) class that uses the OpenAI API.
 
     This class represents a Hugging Face Language Model and provides methods for creating a client and getting a response.
 
@@ -297,7 +285,6 @@ class Ollama(BaseLLM):
     Methods:
         _create_client: Creates an Ollama client using the configuration settings.
         get_response: Generates a response from the language model given a prompt.
-
     """
 
     def _create_client(self):
@@ -305,10 +292,9 @@ class Ollama(BaseLLM):
         Creates an Ollama client using the configuration settings.
 
         Returns:
-            Ollama: An instance of the Ollama client.
-
+            OpenAI: An instance of the OpenAI client configured for Ollama.
         """
-        return Ollama(api_key=self.config.api_key, base_url=self.config.base_url)
+        return OpenAI(base_url=self.config.base_url, api_key="ollama")
 
     def get_response(self, prompt: str) -> str:
         """
@@ -319,14 +305,74 @@ class Ollama(BaseLLM):
 
         Returns:
             str: The generated response from the language model.
-
         """
         response = self.client.chat.completions.create(
             model=self.config.model,
-            messages=[{"role": "system", "content": prompt}],
+            messages=[{"role": "user", "content": prompt}],
             **self.config.params
         )
         return response.choices[0].message.content
+    
+class HFTextLLM(BaseLLM):
+    """
+    A class representing a Hugging Face Inference Language Model.
+
+    This class extends the BaseLLM class and provides methods for interacting with the Hugging Face Inference API.
+
+    Attributes:
+        config (LLMConfig): The configuration object for the language model.
+
+    Methods:
+        _create_client: Creates a Hugging Face Inference client using the configuration settings.
+        get_response: Generates a response from the language model given a prompt.
+    """
+    
+    def _create_client(self):
+        """
+        Creates a Hugging Face Inference client using the configuration settings.
+
+        Returns:
+            InferenceClient: An instance of the Hugging Face Inference client.
+        """
+        return InferenceClient(model=self.config.model, token=self.config.api_key)
+
+    def get_response(self, prompt: str) -> str:
+        """
+        Generates a response from the language model given a prompt.
+
+        Args:
+            prompt (str): The prompt for generating the response.
+
+        Returns:
+            str: The generated response from the language model.
+        """
+        parameters = {}
+        if 'temperature' in self.config.params:
+            parameters['temperature'] = self.config.params['temperature']
+        if 'max_tokens' in self.config.params:
+            parameters['max_new_tokens'] = self.config.params['max_tokens']
+        if 'top_p' in self.config.params:
+            parameters['top_p'] = self.config.params['top_p']
+        if 'top_k' in self.config.params:
+            parameters['top_k'] = self.config.params['top_k']
+        if 'tools' in self.config.params:
+            parameters['tools'] = self.config.params['tools']
+        if 'tool_choice' in self.config.params:
+            parameters['tool_choice'] = self.config.params['tool_choice']
+        if 'tool_prompt' in self.config.params:
+            parameters['tool_prompt'] = self.config.params['tool_prompt']
+        if 'stream' in self.config.params:
+            parameters['stream'] = self.config.params['stream']
+
+        response = self.client.text_generation(
+            prompt,
+            **parameters
+        )
+
+        if 'tools' in self.config.params:
+            return response.choices[0].message.tool_calls[0].function
+        else:
+            return response
 
 class LLMFactory:
     """
@@ -351,7 +397,8 @@ class LLMFactory:
             "openai": OpenAILLM,
             "gemini": GeminiLLM,
             "sdxl": SDXLLLM,
-            "huggingface": HFLLM,
+            "huggingface-openai": HFOpenAIAPILLM,
+            "huggingface-text": HFTextLLM,
             "ollama": Ollama
         }
         if config.provider not in llm_classes:
