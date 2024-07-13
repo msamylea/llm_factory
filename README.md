@@ -2,6 +2,9 @@
 Got tired of always having to change url / chat formats for various LLM providers (OpenAI, HuggingFace, Ollama), so created classes to more easily use them in my apps.
 APIKeyManager uses load_dotenv() so you need to have python-dotenv installed and an .env file created with your api_keys
 
+#_Note:_
+_The HuggingFace models are setup to use the HuggingFace Pro inference type, since that is what I use.  You can change this as needed if you want to use InferenceClient. See SDXL for a reference for InferenceClientm but use text_generation instead of text_to_image._
+
 ## Sample Usage:
 
 ```python
