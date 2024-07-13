@@ -12,7 +12,7 @@ You can add others or change the naming convention in LLMConfig -> _get_api_key 
 
 **_Current Models/APIs:_**
 
-_HuggingFace Inference Client (Text): 'huggingface-text'
+- _HuggingFace Inference Client (Text): 'huggingface-text'
 - OpenAI: 'openai'
 - Gemini: 'gemini'
 - SDXL: 'sdxl'
