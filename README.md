@@ -1,35 +1,51 @@
 # llm_factory
 Got tired of always having to change url / chat formats for various LLM providers (OpenAI, HuggingFace, Ollama), so created classes to more easily use them in my apps.
-APIKeyManager uses load_dotenv() so you need to have python-dotenv installed and an .env file created with your api_keys
+APIKeyManager uses load_dotenv() so you need to have python-dotenv installed and an .env file created with your api_keys in this naming convention.:
+```python
 
-_Note:_
-_The HuggingFace models are setup to use the HuggingFace Pro inference type, since that is what I use.  You can change this as needed if you want to use InferenceClient. See SDXL for a reference for InferenceClient, but use text_generation instead of text_to_image._
+OPENAI_API_KEY = "  <openai key>  ",
+HF_TOKEN = " <huggingface token>   ",
+GENAI_API_KEY = "<google gemini key>",
+
+```
+You can add others or change the naming convention in LLMConfig -> _get_api_key -> env_var_map
+
+_Current Models/APIs:_
+_HuggingFace Inference Client (Text): 'huggingface-text'
+OpenAI: 'openai'
+Gemini: 'gemini'
+SDXL: 'sdxl'
+HuggingFace Inference using OpenAI API: 'huggingface-openai'
+Ollama: 'ollama'
 
 ## Sample Usage:
 
 ```python
-from llm_config import get_llm, APIKeyManager
-import os
+from llm_config import get_llm
 from dotenv import load_dotenv
 
+# Load environment variables from .env file
 load_dotenv()
 
-# Set API keys
-APIKeyManager.set_api_key("huggingface", os.environ.get("HF_TOKEN"))
-APIKeyManager.set_api_key("gemini", os.environ.get("GENAI_API_KEY"))
-APIKeyManager.set_api_key("sdxl", os.environ.get("HF_TOKEN"))
-
 # Hugging Face (using OpenAI interface)
-hf_llm = get_llm("huggingface", "meta-llama/Meta-Llama-3-70B-Instruct", temperature=0.7, max_tokens=500)
-print("HuggingFace:", hf_llm.get_response("What is the capital of France?"))
+hf_llm = get_llm("huggingface-openai", "meta-llama/Meta-Llama-3-70B-Instruct", temperature=0.7, max_tokens=500)
+print("HuggingFace (OpenAI API):", hf_llm.get_response("What is the capital of France?"))
 
 # Gemini
-gemini_llm = get_llm("gemini", "gemini-1.5-pro", max_output_tokens=100, temperature=0.7)
+gemini_llm = get_llm("gemini", "gemini-1.5-flash", max_output_tokens=100, temperature=0.7)
 print("Gemini:", gemini_llm.get_response("What is the capital of Spain?"))
 
 # SDXL
 sdxl_llm = get_llm("sdxl", "stabilityai/stable-diffusion-xl-base-1.0")
 print("SDXL:", sdxl_llm.get_response("A futuristic cityscape of Tokyo"))
+
+# HuggingFace Text
+hf_text_llm = get_llm("huggingface-text", "google/gemma-2b", temperature=0.1, max_tokens=10)
+print("HuggingFace Text:", hf_text_llm.get_response("What is the capital of France?"))
+
+# Ollama
+ollama_llm = get_llm("ollama", "l3custom", temperature=0.7, max_tokens=500)
+print("Ollama:", ollama_llm.get_response("What is the capital of Germany?"))
 ```
 
 ## Adding Additional Providers and Response Formats:
