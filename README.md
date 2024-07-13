@@ -10,14 +10,14 @@ GENAI_API_KEY = "<google gemini key>",
 ```
 You can add others or change the naming convention in LLMConfig -> _get_api_key -> env_var_map
 
-_Current Models/APIs:_
+**_Current Models/APIs:_**
 
 _HuggingFace Inference Client (Text): 'huggingface-text'
-OpenAI: 'openai'
-Gemini: 'gemini'
-SDXL: 'sdxl'
-HuggingFace Inference using OpenAI API: 'huggingface-openai'
-Ollama: 'ollama'_
+- OpenAI: 'openai'
+- Gemini: 'gemini'
+- SDXL: 'sdxl'
+- HuggingFace Inference using OpenAI API: 'huggingface-openai'
+- Ollama: 'ollama'_
 
 ## Sample Usage:
 
