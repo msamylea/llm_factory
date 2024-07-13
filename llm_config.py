@@ -284,6 +284,49 @@ class HFLLM(BaseLLM):
             **self.config.params
         )
         return response.choices[0].message.content
+    
+class Ollama(BaseLLM):
+    """
+    A class representing an Ollama served Language Model.
+
+    This class extends the BaseLLM class and provides methods for interacting with the Ollama API.
+
+    Attributes:
+        config (LLMConfig): The configuration object for the language model.
+
+    Methods:
+        _create_client: Creates an Ollama client using the configuration settings.
+        get_response: Generates a response from the language model given a prompt.
+
+    """
+
+    def _create_client(self):
+        """
+        Creates an Ollama client using the configuration settings.
+
+        Returns:
+            Ollama: An instance of the Ollama client.
+
+        """
+        return Ollama(api_key=self.config.api_key, base_url=self.config.base_url)
+
+    def get_response(self, prompt: str) -> str:
+        """
+        Generates a response from the language model given a prompt.
+
+        Args:
+            prompt (str): The prompt for generating the response.
+
+        Returns:
+            str: The generated response from the language model.
+
+        """
+        response = self.client.chat.completions.create(
+            model=self.config.model,
+            messages=[{"role": "system", "content": prompt}],
+            **self.config.params
+        )
+        return response.choices[0].message.content
 
 class LLMFactory:
     """
@@ -308,7 +351,8 @@ class LLMFactory:
             "openai": OpenAILLM,
             "gemini": GeminiLLM,
             "sdxl": SDXLLLM,
-            "huggingface": HFLLM
+            "huggingface": HFLLM,
+            "ollama": Ollama
         }
         if config.provider not in llm_classes:
             raise ValueError(f"Unsupported provider: {config.provider}")
