@@ -175,11 +175,24 @@ class SDXLLLM(BaseLLM):
     def _create_client(self):
         return InferenceClient(model=self.config.model, token=self.config.api_key)
 
-    def get_response(self, prompt: str) -> str:
+    def _generate_filename(self, prompt: str) -> str:
+        from datetime import datetime
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # Use the first few words of the prompt, removing any non-alphanumeric characters
+        prompt_part = "".join(c for c in prompt[:30] if c.isalnum() or c.isspace()).rstrip()
+        prompt_part = prompt_part.replace(" ", "_")
+        return f"{timestamp}_{prompt_part}.jpg"
+
+    def get_response(self, prompt: str, save_dir: str = "./generated_images") -> str:
         try:
+            # Ensure the save directory exists
+            os.makedirs(save_dir, exist_ok=True)
+
             image = self.client.text_to_image(prompt, **self.config.params)
             if isinstance(image, Image.Image):
-                image_path = f"{prompt[:20].replace(' ', '_')}.jpg"
+                filename = self._generate_filename(prompt)
+                image_path = os.path.join(save_dir, filename)
                 image.save(image_path)
                 return f"Image saved as {image_path}"
             else:
@@ -187,9 +200,9 @@ class SDXLLLM(BaseLLM):
         except Exception as e:
             return f"Error generating image: {str(e)}"
 
-    async def get_aresponse(self, prompt: str):
+    async def get_aresponse(self, prompt: str, save_dir: str = "./generated_images"):
         # SDXL doesn't support async streaming, so we'll return the full response
-        yield self.get_response(prompt)
+        yield self.get_response(prompt, save_dir)
 
 class HFOpenAIAPILLM(BaseLLM):
     def _create_client(self):
