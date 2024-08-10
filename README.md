@@ -55,7 +55,8 @@ response = llm.get_response(prompt)
 
 # SDXL
 sdxl_llm = get_llm("sdxl", "stabilityai/stable-diffusion-xl-base-1.0")
-print("SDXL:", sdxl_llm.get_response("A futuristic cityscape of Tokyo"))
+sdxl_llm.get_response("A futuristic cityscape of Tokyo", save_dir='path/to/savedir'))
+Note: if you don't give a save directory path, the image save defaults to ./generated_images
 
 # HuggingFace Text
 hf_text_llm = get_llm("huggingface-text", "google/gemma-2b", temperature=0.1, max_tokens=10)
