@@ -12,15 +12,25 @@ You can add others or change the naming convention in LLMConfig -> _get_api_key 
 
 **_Current Models/APIs:_**
 
-- HuggingFace Inference Client (Text): 'huggingface-text'
-- OpenAI: 'openai'
-- Gemini: 'gemini'
-- SDXL: 'sdxl'
-- HuggingFace Inference using OpenAI API: 'huggingface-openai'
-- Ollama: 'ollama'
+            "openai": OpenAILLM,
+            "gemini": GeminiLLM,
+            "sdxl": SDXLLLM,
+            "huggingface-openai": HFOpenAIAPILLM,
+            "huggingface-text": HFTextLLM,
+            "ollama": Ollama,
+            "anthropic": AnthropicLLM,
+            "cohere": CohereLLM,
+            "replicate": ReplicateLLM,
+            "mistral": MistralLLM,
+            "llamacpp": LlamaCppLLM,
+            "litellm": LiteLLM,
+            "groq": GroqLLM,
+            "together": TogetherAILLM,
 
 ## Sample Usage:
 
+- get_response for non-async, get_aresponse for async
+- 
 ```python
 from llm_config import get_llm
 from dotenv import load_dotenv
