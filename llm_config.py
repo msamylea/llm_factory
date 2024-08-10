@@ -166,10 +166,9 @@ class GeminiLLM(BaseLLM):
         return response.text
 
     async def get_aresponse(self, prompt: str):
-        # Gemini doesn't support async streaming, so we'll simulate it
-        response = self.get_response(prompt)
-        for chunk in response.split():
-            yield chunk
+        response = self.generate_content(prompt)
+        for chunk in response:
+            yield chunk.text
             await asyncio.sleep(0.01)
 
 class SDXLLLM(BaseLLM):
