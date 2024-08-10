@@ -30,7 +30,8 @@ You can add others or change the naming convention in LLMConfig -> _get_api_key 
 ## Sample Usage:
 
 - get_response for non-async, get_aresponse for async
-- 
+- Non async supported providers use yielded chunks to simulate async
+
 ```python
 from llm_config import get_llm
 from dotenv import load_dotenv
@@ -42,9 +43,15 @@ load_dotenv()
 hf_llm = get_llm("huggingface-openai", "meta-llama/Meta-Llama-3-70B-Instruct", temperature=0.7, max_tokens=500)
 print("HuggingFace (OpenAI API):", hf_llm.get_response("What is the capital of France?"))
 
-# Gemini
+# Gemini (text only)
 gemini_llm = get_llm("gemini", "gemini-1.5-flash", max_output_tokens=100, temperature=0.7)
 print("Gemini:", gemini_llm.get_response("What is the capital of Spain?"))
+
+# Gemini (text and image)
+gemini_llm = get_llm("gemini", "gemini-1.5-flash")
+my_image = Image.open("path/to/my_image.jpg")
+prompt =["Tell me about this image", my_image]
+response = llm.get_response(prompt)
 
 # SDXL
 sdxl_llm = get_llm("sdxl", "stabilityai/stable-diffusion-xl-base-1.0")
